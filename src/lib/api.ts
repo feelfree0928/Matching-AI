@@ -1,0 +1,236 @@
+/**
+ * Typed fetch wrappers for the matching API. Uses /proxy to avoid CORS.
+ */
+
+const getBase = () =>
+  typeof window !== "undefined"
+    ? "/proxy"
+    : process.env.NEXT_PUBLIC_API_BASE ?? "http://74.161.162.184:8000";
+
+export interface LanguageRequirement {
+  name: string;
+  min_level?: string;
+}
+
+export interface JobMatchRequest {
+  post_id?: number;
+  title: string;
+  description?: string;
+  required_skills?: string;
+  required_education?: string;
+  industry?: string;
+  expected_seniority_level?: string;
+  location_lat: number;
+  location_lon: number;
+  radius_km?: number;
+  pensum_min?: number;
+  pensum_max?: number;
+  required_languages?: LanguageRequirement[];
+  required_available_before?: string | null;
+  max_results?: number;
+  min_score?: number;
+}
+
+export interface ScoreBreakdown {
+  total: number;
+  title_score: number;
+  industry_score: number;
+  experience_score: number;
+  skills_score: number;
+  seniority_score: number;
+  education_score: number;
+  language_score?: number;
+}
+
+export interface WorkExperienceItem {
+  raw_title: string;
+  standardized_title: string;
+  industry: string;
+  start_year?: number | null;
+  end_year?: number | null;
+  years_in_role?: number | null;
+  weighted_years?: number | null;
+}
+
+export interface CandidateLanguage {
+  lang: string;
+  degree: string;
+}
+
+export interface CandidateMatch {
+  post_id: number;
+  score: ScoreBreakdown;
+  rank?: number;
+  rank_explanation?: string[];
+
+  // Identity & contact
+  candidate_name?: string;
+  phone?: string;
+  gender?: string;
+  linkedin_url?: string;
+  website_url?: string;
+  cv_file?: string;
+
+  // Profile text
+  short_description?: string;
+  job_expectations?: string;
+  highest_degree?: string;
+  ai_profile_description?: string;
+  ai_experience_description?: string;
+  ai_skills_description?: string;
+  ai_text_skill_result?: string;
+
+  // Experience & skills
+  most_relevant_role: string;
+  total_relevant_years: number;
+  seniority_level: string;
+  work_experiences?: WorkExperienceItem[];
+  skills_text?: string;
+  education_text?: string;
+  most_experience_industries?: string[];
+  top_industries: string[];
+
+  // Languages
+  languages?: CandidateLanguage[];
+
+  // Location
+  location: string;
+  zip_code?: string;
+  work_radius_km?: number;
+  work_radius_text?: string;
+
+  // Availability & contract
+  available_from?: string | null;
+  pensum_desired: number;
+  pensum_from?: number;
+  pensum_duration?: string;
+  on_contract_basis?: boolean;
+  voluntary?: string;
+
+  // Personal
+  birth_year?: number | null;
+  retired?: boolean;
+
+  // Categories
+  job_categories_primary?: string[];
+  job_categories_secondary?: string[];
+
+  // Profile meta
+  profile_status?: string;
+  registered_at?: string | null;
+  expires_at?: string | null;
+  featured?: boolean;
+  post_date?: string | null;
+}
+
+export interface MatchResponse {
+  matches: CandidateMatch[];
+  message: string | null;
+  total_above_threshold: number;
+}
+
+export interface ConfigResponse {
+  scoring_weights: Record<string, number>;
+  min_score_raw: number;
+  max_results: number;
+}
+
+export interface ConfigUpdate {
+  scoring_weights?: Record<string, number>;
+  min_score_raw?: number;
+  max_results?: number;
+}
+
+export interface SyncResponse {
+  ok: boolean;
+  stdout?: string;
+  stderr?: string;
+  message?: string;
+}
+
+export type ApiResult<T> = { data: T; latencyMs: number };
+export type ApiError = { error: string; latencyMs: number };
+
+async function fetchWithLatency<T>(
+  url: string,
+  options?: RequestInit
+): Promise<ApiResult<T> | ApiError> {
+  const start = Date.now();
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...options?.headers },
+    });
+    const text = await res.text();
+    const latencyMs = Date.now() - start;
+    if (!res.ok) {
+      return { error: text || res.statusText, latencyMs };
+    }
+    const data = text ? (JSON.parse(text) as T) : ({} as T);
+    return { data, latencyMs };
+  } catch (e) {
+    const latencyMs = Date.now() - start;
+    return {
+      error: e instanceof Error ? e.message : String(e),
+      latencyMs,
+    };
+  }
+}
+
+export async function getHealth(): Promise<
+  ApiResult<{ elasticsearch: string; database: string }> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/health`);
+}
+
+export async function getConfig(): Promise<
+  ApiResult<ConfigResponse> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/config`);
+}
+
+export async function patchConfig(
+  body: ConfigUpdate
+): Promise<ApiResult<ConfigResponse> | ApiError> {
+  return fetchWithLatency(`${getBase()}/api/config`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function postMatch(
+  body: JobMatchRequest
+): Promise<ApiResult<MatchResponse> | ApiError> {
+  return fetchWithLatency(`${getBase()}/api/match`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function getJobMatches(
+  postId: number
+): Promise<ApiResult<MatchResponse> | ApiError> {
+  return fetchWithLatency(`${getBase()}/api/jobs/${postId}/matches`);
+}
+
+export async function syncCandidates(): Promise<
+  ApiResult<SyncResponse> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/index/candidates/sync`, {
+    method: "POST",
+  });
+}
+
+export async function syncJobs(): Promise<
+  ApiResult<SyncResponse> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/index/jobs/sync`, {
+    method: "POST",
+  });
+}
+
+export function isError<T>(
+  r: ApiResult<T> | ApiError
+): r is ApiError {
+  return "error" in r;
+}

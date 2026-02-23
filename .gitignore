@@ -1,0 +1,13 @@
+# Create .gitignore file
+cat > .gitignore << 'EOF'
+node_modules/
+.env
+*.log
+.DS_Store
+coverage/
+dist/
+build/
+EOF
+
+# Verify it was created
+cat .gitignore
