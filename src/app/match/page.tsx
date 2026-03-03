@@ -39,7 +39,7 @@ const defaultRequest: JobMatchRequest = {
   pensum_min: 0,
   pensum_max: 100,
   expected_seniority_level: "senior",
-  max_results: 20,
+  max_results: undefined,   // undefined → backend uses the value from /api/config
   required_languages: [],
   required_available_before: undefined,
 };
@@ -228,13 +228,15 @@ export default function MatchPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Max results</Label>
+            <Label>Max results (blank = use config default)</Label>
             <Input
               type="number"
-              value={req.max_results ?? 20}
-              onChange={(e) =>
-                setReq((p) => ({ ...p, max_results: parseInt(e.target.value, 10) || 20 }))
-              }
+              placeholder="use config default"
+              value={req.max_results ?? ""}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setReq((p) => ({ ...p, max_results: isNaN(v) ? undefined : v }));
+              }}
             />
           </div>
           <div className="space-y-2">
