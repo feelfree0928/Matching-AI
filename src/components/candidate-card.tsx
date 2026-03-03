@@ -107,9 +107,11 @@ export function CandidateCard({ candidate, rank }: CandidateCardProps) {
                 return (
                   <li key={i} className="flex flex-wrap gap-x-2">
                     <span className="font-medium">{e.raw_title || e.standardized_title || "—"}</span>
-                    {e.standardized_title && e.standardized_title !== e.raw_title && (
-                      <span className="text-muted-foreground text-xs">[{e.standardized_title}]</span>
-                    )}
+                    {e.standardized_title &&
+                      e.standardized_title !== "NONE" &&
+                      e.standardized_title !== e.raw_title && (
+                        <span className="text-muted-foreground text-xs">[{e.standardized_title}]</span>
+                      )}
                     {range && <span className="text-muted-foreground text-xs">({range})</span>}
                     {yrs != null && <span className="text-muted-foreground text-xs">{yrs} yrs</span>}
                     {e.industry && <span className="text-muted-foreground text-xs">· {e.industry}</span>}
