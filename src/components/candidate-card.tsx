@@ -61,6 +61,11 @@ export function CandidateCard({ candidate, rank }: CandidateCardProps) {
         </div>
 
         {/* ── Score breakdown ────────────────────────────────────── */}
+        {candidate.score.score_display ? (
+          <p className="text-sm text-muted-foreground mt-1 break-words" title={candidate.score.total_formula}>
+            {candidate.score.score_display}
+          </p>
+        ) : null}
         <ScoreBar score={candidate.score} />
       </CardHeader>
 

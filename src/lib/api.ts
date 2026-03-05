@@ -33,6 +33,7 @@ export interface JobMatchRequest {
 
 export interface ScoreBreakdown {
   total: number;
+  raw_score?: number;
   title_score: number;
   industry_score: number;
   experience_score: number;
@@ -40,6 +41,14 @@ export interface ScoreBreakdown {
   seniority_score: number;
   education_score: number;
   language_score?: number;
+  total_formula?: string;
+  score_calculation?: Array<{
+    parameter: string;
+    value: number;
+    weight: number;
+    contribution?: number;
+  }>;
+  score_display?: string;
 }
 
 export interface WorkExperienceItem {
