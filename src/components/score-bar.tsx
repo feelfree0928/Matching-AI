@@ -55,14 +55,15 @@ export function ScoreBar({ score }: { score: ScoreBreakdownBar }) {
   return (
     <div className="flex h-6 w-full min-w-[120px] overflow-hidden rounded-md border bg-muted/30">
       {DIMS.map(({ key, color }) => {
-        const value = score[key as keyof ScoreBreakdownBar] ?? 0;
+        const raw = score[key as keyof ScoreBreakdownBar];
+        const value = typeof raw === "number" ? raw : 0;
         const pct = Math.max(0, Math.min(100, value * scale));
         return (
           <div
             key={key}
             className={cn("transition-all", color)}
             style={{ width: `${pct}%` }}
-            title={`${key}: ${Number(value).toFixed(1)}`}
+            title={`${key}: ${value.toFixed(1)}`}
           />
         );
       })}

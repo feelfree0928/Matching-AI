@@ -62,8 +62,14 @@ export function CandidateCard({ candidate, rank }: CandidateCardProps) {
 
         {/* ── Score breakdown ────────────────────────────────────── */}
         {candidate.score.score_display ? (
-          <p className="text-sm text-muted-foreground mt-1 break-words" title={candidate.score.total_formula}>
+          <p className="text-sm text-muted-foreground mt-1 break-words" title={candidate.score.total_formula ?? undefined}>
             {candidate.score.score_display}
+          </p>
+        ) : null}
+        {candidate.score.experience_detail ? (
+          <p className="text-xs text-muted-foreground mt-0.5" title="How experience score was calculated">
+            Experience: primary {candidate.score.experience_detail.primary_years} yrs (rel {candidate.score.experience_detail.primary_relevance}) → {candidate.score.experience_detail.exp_primary}; secondary {candidate.score.experience_detail.secondary_years} yrs → {candidate.score.experience_detail.exp_secondary}
+            {candidate.score.experience_detail.none_penalty !== 1 ? ` · NONE penalty ${candidate.score.experience_detail.none_penalty}` : ""}
           </p>
         ) : null}
         <ScoreBar score={candidate.score} />

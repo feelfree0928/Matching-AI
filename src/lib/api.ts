@@ -49,6 +49,14 @@ export interface ScoreBreakdown {
     contribution?: number;
   }>;
   score_display?: string;
+  experience_detail?: {
+    primary_years?: number;
+    secondary_years?: number;
+    primary_relevance?: number;
+    exp_primary?: number;
+    exp_secondary?: number;
+    none_penalty?: number;
+  };
 }
 
 export interface WorkExperienceItem {
