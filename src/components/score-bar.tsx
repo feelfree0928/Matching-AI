@@ -28,7 +28,7 @@ export function ScoreBar({ score }: { score: ScoreBreakdownBar }) {
           const pct = Math.max(0, Math.min(100, contrib * scale));
           const item = calc.find((c) => c.parameter === paramKey);
           const title = item
-            ? `${paramKey}: ${item.value} × ${item.weight} = ${item.contribution}`
+            ? `${paramKey}: ${item.value}×${item.weight}→${item.contribution} pts`
             : key;
           return (
             <div

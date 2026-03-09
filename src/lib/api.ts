@@ -27,6 +27,7 @@ export interface JobMatchRequest {
   pensum_max?: number;
   required_languages?: LanguageRequirement[];
   required_available_before?: string | null;
+  job_category_labels?: string[];
   max_results?: number;
   min_score?: number;
 }
@@ -55,7 +56,6 @@ export interface ScoreBreakdown {
     primary_relevance?: number;
     exp_primary?: number;
     exp_secondary?: number;
-    none_penalty?: number;
   };
 }
 
@@ -144,6 +144,7 @@ export interface MatchResponse {
   matches: CandidateMatch[];
   message: string | null;
   total_above_threshold: number;
+  applied_category_labels?: string[];
 }
 
 export interface ConfigResponse {
@@ -228,6 +229,12 @@ export async function getJobMatches(
   postId: number
 ): Promise<ApiResult<MatchResponse> | ApiError> {
   return fetchWithLatency(`${getBase()}/api/jobs/${postId}/matches`);
+}
+
+export async function getCategories(): Promise<
+  ApiResult<{ categories: string[] }> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/categories`);
 }
 
 export async function syncCandidates(): Promise<

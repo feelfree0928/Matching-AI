@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   postMatch,
+  getCategories,
   isError,
   type JobMatchRequest,
   type LanguageRequirement,
@@ -42,6 +43,7 @@ const defaultRequest: JobMatchRequest = {
   max_results: undefined,   // undefined → backend uses the value from /api/config
   required_languages: [],
   required_available_before: undefined,
+  job_category_labels: undefined,
 };
 
 export default function MatchPage() {
@@ -50,13 +52,38 @@ export default function MatchPage() {
     Awaited<ReturnType<typeof postMatch>> | null
   >(null);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    getCategories().then((r) => {
+      if (!isError(r)) setCategories(r.data.categories ?? []);
+    });
+  }, []);
 
   const runMatch = async () => {
     setLoading(true);
     setResult(null);
-    const r = await postMatch(req);
+    const payload = { ...req };
+    if (payload.job_category_labels?.length === 0) {
+      delete payload.job_category_labels;
+    }
+    const r = await postMatch(payload);
     setResult(r);
     setLoading(false);
+  };
+
+  const selectedCats = req.job_category_labels ?? [];
+  const toggleCategory = (cat: string) => {
+    setReq((p) => {
+      const current = p.job_category_labels ?? [];
+      const next = current.includes(cat)
+        ? current.filter((c) => c !== cat)
+        : [...current, cat];
+      return { ...p, job_category_labels: next.length ? next : undefined };
+    });
+  };
+  const clearCategories = () => {
+    setReq((p) => ({ ...p, job_category_labels: undefined }));
   };
 
   const data = result && !isError(result) ? result.data : null;
@@ -140,6 +167,44 @@ export default function MatchPage() {
               placeholder="Education"
               rows={2}
             />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Category filter (optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Leave empty to auto-detect from job title. Or select manually if the auto selection is wrong.
+            </p>
+            {categories.length > 0 ? (
+              <>
+                <div className="max-h-40 overflow-y-auto rounded-md border p-2 space-y-1.5">
+                  {categories.map((cat) => (
+                    <label
+                      key={cat}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCats.includes(cat)}
+                        onChange={() => toggleCategory(cat)}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedCats.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearCategories}
+                  >
+                    Clear ({selectedCats.length} selected)
+                  </Button>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading categories…</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Expected seniority</Label>
@@ -297,6 +362,18 @@ export default function MatchPage() {
             <CardTitle>
               Matches ({data.total_above_threshold} above threshold)
             </CardTitle>
+            {data.applied_category_labels && data.applied_category_labels.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Filtering by: {data.applied_category_labels.join(", ")}
+                {" "}
+                <span className="italic">— Wrong? Select categories manually above and run again.</span>
+              </p>
+            )}
+            {data.applied_category_labels?.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                No category filter applied (showing all candidates).
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -309,7 +386,14 @@ export default function MatchPage() {
       )}
 
       {data?.message && data.matches.length === 0 && (
-        <p className="text-muted-foreground">{data.message}</p>
+        <div className="space-y-1">
+          <p className="text-muted-foreground">{data.message}</p>
+          {data.applied_category_labels && data.applied_category_labels.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              Filter was: {data.applied_category_labels.join(", ")}. Try different categories or clear to show all.
+            </p>
+          )}
+        </div>
       )}
 
       {(data || error) && (
