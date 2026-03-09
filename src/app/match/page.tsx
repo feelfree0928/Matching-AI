@@ -53,10 +53,12 @@ export default function MatchPage() {
   >(null);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   useEffect(() => {
     getCategories().then((r) => {
       if (!isError(r)) setCategories(r.data.categories ?? []);
+      setCategoriesLoaded(true);
     });
   }, []);
 
@@ -173,7 +175,9 @@ export default function MatchPage() {
             <p className="text-xs text-muted-foreground">
               Leave empty to auto-detect from job title. Or select manually if the auto selection is wrong.
             </p>
-            {categories.length > 0 ? (
+            {!categoriesLoaded ? (
+              <p className="text-sm text-muted-foreground">Loading categories…</p>
+            ) : categories.length > 0 ? (
               <>
                 <div className="max-h-40 overflow-y-auto rounded-md border p-2 space-y-1.5">
                   {categories.map((cat) => (
@@ -203,7 +207,7 @@ export default function MatchPage() {
                 )}
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Loading categories…</p>
+              <p className="text-sm text-muted-foreground">No categories available. Check backend DB connection.</p>
             )}
           </div>
           <div className="space-y-2">
