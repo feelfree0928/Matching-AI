@@ -145,7 +145,6 @@ export interface MatchResponse {
   message: string | null;
   total_above_threshold: number;
   applied_category_labels?: string[];
-  category_filter_fallback?: boolean;
 }
 
 export interface ConfigResponse {

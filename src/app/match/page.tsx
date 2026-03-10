@@ -366,19 +366,14 @@ export default function MatchPage() {
             <CardTitle>
               Matches ({data.total_above_threshold} above threshold)
             </CardTitle>
-            {data.category_filter_fallback && (
-              <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
-                Category filter returned no results; showing all candidates matching other criteria.
-              </p>
-            )}
-            {data.applied_category_labels && data.applied_category_labels.length > 0 && !data.category_filter_fallback && (
+            {data.applied_category_labels && data.applied_category_labels.length > 0 && (
               <p className="text-sm text-muted-foreground mt-1">
                 Filtering by: {data.applied_category_labels.join(", ")}
                 {" "}
                 <span className="italic">— Wrong? Select categories manually above and run again.</span>
               </p>
             )}
-            {data.applied_category_labels?.length === 0 && !data.category_filter_fallback && (
+            {data.applied_category_labels?.length === 0 && (
               <p className="text-sm text-muted-foreground mt-1">
                 No category filter applied (showing all candidates).
               </p>
@@ -397,12 +392,7 @@ export default function MatchPage() {
       {data?.message && data.matches.length === 0 && (
         <div className="space-y-1">
           <p className="text-muted-foreground">{data.message}</p>
-          {data.category_filter_fallback && (
-            <p className="text-sm text-amber-600 dark:text-amber-500">
-              Category filter returned no results; we tried without it but still found no candidates above threshold.
-            </p>
-          )}
-          {data.applied_category_labels && data.applied_category_labels.length > 0 && !data.category_filter_fallback && (
+          {data.applied_category_labels && data.applied_category_labels.length > 0 && (
             <p className="text-sm text-muted-foreground">
               Filter was: {data.applied_category_labels.join(", ")}. Try different categories or clear to show all.
             </p>
