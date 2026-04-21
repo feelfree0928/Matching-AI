@@ -25,8 +25,8 @@ import { CandidateCard } from "@/components/candidate-card";
 import { ResponsePanel } from "@/components/response-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const DEFAULT_HIERARCHY = "Specialist";
 const NO_INDUSTRY = "__none__";
+const ANY_HIERARCHY = "__any__";
 const FALLBACK_INDUSTRIES: string[] = [
   "Automobilindustrie / Luftfahrt",
   "Banken / Finanzinstitute / Versicherungen",
@@ -81,7 +81,7 @@ const defaultRequest: JobMatchRequest = {
   radius_km: 50,
   pensum_min: 0,
   pensum_max: 100,
-  expected_hierarchy_level: DEFAULT_HIERARCHY,
+  expected_hierarchy_level: undefined,
   max_results: undefined,
   required_languages: [],
   required_available_before: undefined,
@@ -146,6 +146,7 @@ export default function MatchPage() {
       delete payload.job_category_labels;
     }
     if (!payload.industry) delete payload.industry;
+    if (!payload.expected_hierarchy_level) delete payload.expected_hierarchy_level;
     if (!payload.skills_and_education?.trim()) delete payload.skills_and_education;
     const r = await postMatch(payload);
     setResult(r);
@@ -236,8 +237,9 @@ export default function MatchPage() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Exact-match scoring on the closed 30-label vocabulary; selecting an
-              industry rewards candidates with verified years in that sector.
+              Hard filter on the closed 30-label vocabulary. Selecting an industry
+              returns <strong>only</strong> candidates with that industry in their
+              history — enabling exact counts (e.g. &ldquo;C-Level AND Accounting&rdquo;).
             </p>
             {usingIndustryFallback && (
               <p className="text-xs text-amber-600">
@@ -248,15 +250,21 @@ export default function MatchPage() {
           <div className="space-y-2">
             <Label>Hierarchy Level</Label>
             <Select
-              value={req.expected_hierarchy_level ?? DEFAULT_HIERARCHY}
+              value={req.expected_hierarchy_level ?? ANY_HIERARCHY}
               onValueChange={(v) =>
-                setReq((p) => ({ ...p, expected_hierarchy_level: v }))
+                setReq((p) => ({
+                  ...p,
+                  expected_hierarchy_level: v === ANY_HIERARCHY ? undefined : v,
+                }))
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select hierarchy level…" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value={ANY_HIERARCHY}>
+                  Any hierarchy (no filter)
+                </SelectItem>
                 {hierarchyLevels.map((h) => (
                   <SelectItem key={h} value={h}>
                     {h}
@@ -264,6 +272,10 @@ export default function MatchPage() {
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Hard filter on the 6-level ladder. Selecting a level returns{" "}
+              <strong>only</strong> candidates inferred to be at that exact level.
+            </p>
             {usingHierarchyFallback && (
               <p className="text-xs text-amber-600">
                 Using built-in fallback list because `/api/hierarchy-levels` is unavailable.
@@ -471,6 +483,11 @@ export default function MatchPage() {
             <CardTitle>
               Matches ({data.total_above_threshold} above threshold)
             </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Exact count for the selected hard filters (industry, hierarchy,
+              category, location, languages). Damaged profiles (no usable
+              experience) are excluded automatically.
+            </p>
             {data.applied_category_labels && data.applied_category_labels.length > 0 && (
               <p className="text-sm text-muted-foreground mt-1">
                 Filtering by: {data.applied_category_labels.join(", ")}
