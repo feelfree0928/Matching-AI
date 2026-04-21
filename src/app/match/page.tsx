@@ -27,6 +27,52 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DEFAULT_HIERARCHY = "Specialist";
 const NO_INDUSTRY = "__none__";
+const FALLBACK_INDUSTRIES: string[] = [
+  "Automobilindustrie / Luftfahrt",
+  "Banken / Finanzinstitute / Versicherungen",
+  "Baugewerbe / Immobilien",
+  "Beratung / Treuhand / Recht",
+  "Bildungswesen",
+  "Chemie / Pharma / Biotech / Medizintechnik",
+  "Detail- / Grosshandel / Verkauf",
+  "Dienstleistungen allgemein",
+  "Energie- / Wasserwirtschaft",
+  "Gastgewerbe / Hotellerie / Events",
+  "Gesundheits- / Sozialwesen",
+  "Gewerbe / Handwerk",
+  "Industrie / Technik / Produktion",
+  "Informatik / Telekommunikation",
+  "Konsum- / Luxusgüterindustrie",
+  "Kunst / Kultur",
+  "Land- / Forstwirtschaft / Holz",
+  "Lebensmittelindustrie",
+  "Maschinen- / Anlagenbau",
+  "Medien / Druckerei / Verlage",
+  "Möbel- und Einrichtungsindustrie",
+  "Mode und Textilien",
+  "Öffentliche Verwaltung / Verbände",
+  "Personalberatung",
+  "Reinigung",
+  "Sport",
+  "Tourismus / Reisen / Freizeit",
+  "Transport / Logistik / Verkehr",
+  "Wissenschaft / Forschung",
+  "Wohltätige Organisationen / Non-Profit",
+];
+const FALLBACK_HIERARCHY_LEVELS: string[] = [
+  "Operative / Worker",
+  "Specialist",
+  "Middle Management",
+  "Upper management",
+  "C-Level",
+  "Owner / Founder",
+];
+
+function normalizeOptions(values: string[] | undefined): string[] {
+  if (!values?.length) return [];
+  const deduped = new Set(values.map((v) => v.trim()).filter(Boolean));
+  return Array.from(deduped);
+}
 
 const defaultRequest: JobMatchRequest = {
   title: "Senior Accountant",
@@ -52,6 +98,8 @@ export default function MatchPage() {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [industries, setIndustries] = useState<string[]>([]);
   const [hierarchyLevels, setHierarchyLevels] = useState<string[]>([]);
+  const [usingIndustryFallback, setUsingIndustryFallback] = useState(false);
+  const [usingHierarchyFallback, setUsingHierarchyFallback] = useState(false);
 
   useEffect(() => {
     getCategories().then((r) => {
@@ -59,10 +107,34 @@ export default function MatchPage() {
       setCategoriesLoaded(true);
     });
     getIndustries().then((r) => {
-      if (!isError(r)) setIndustries(r.data.industries ?? []);
+      if (!isError(r)) {
+        const options = normalizeOptions(r.data.industries);
+        if (options.length > 0) {
+          setIndustries(options);
+          setUsingIndustryFallback(false);
+        } else {
+          setIndustries(FALLBACK_INDUSTRIES);
+          setUsingIndustryFallback(true);
+        }
+        return;
+      }
+      setIndustries(FALLBACK_INDUSTRIES);
+      setUsingIndustryFallback(true);
     });
     getHierarchyLevels().then((r) => {
-      if (!isError(r)) setHierarchyLevels(r.data.hierarchy_levels ?? []);
+      if (!isError(r)) {
+        const options = normalizeOptions(r.data.hierarchy_levels);
+        if (options.length > 0) {
+          setHierarchyLevels(options);
+          setUsingHierarchyFallback(false);
+        } else {
+          setHierarchyLevels(FALLBACK_HIERARCHY_LEVELS);
+          setUsingHierarchyFallback(true);
+        }
+        return;
+      }
+      setHierarchyLevels(FALLBACK_HIERARCHY_LEVELS);
+      setUsingHierarchyFallback(true);
     });
   }, []);
 
@@ -167,6 +239,11 @@ export default function MatchPage() {
               Exact-match scoring on the closed 30-label vocabulary; selecting an
               industry rewards candidates with verified years in that sector.
             </p>
+            {usingIndustryFallback && (
+              <p className="text-xs text-amber-600">
+                Using built-in fallback list because `/api/industries` is unavailable.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Hierarchy Level</Label>
@@ -177,7 +254,7 @@ export default function MatchPage() {
               }
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select hierarchy level…" />
               </SelectTrigger>
               <SelectContent>
                 {hierarchyLevels.map((h) => (
@@ -187,6 +264,11 @@ export default function MatchPage() {
                 ))}
               </SelectContent>
             </Select>
+            {usingHierarchyFallback && (
+              <p className="text-xs text-amber-600">
+                Using built-in fallback list because `/api/hierarchy-levels` is unavailable.
+              </p>
+            )}
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Description</Label>

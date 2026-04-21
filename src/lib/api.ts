@@ -176,6 +176,31 @@ export interface SyncResponse {
   message?: string;
 }
 
+export interface HealthResponse {
+  elasticsearch: string;
+  database: string;
+  checks?: {
+    elasticsearch?: {
+      cluster_name?: string;
+      version?: string;
+      cluster_status?: string;
+      nodes?: number;
+      active_shards_percent?: number;
+      jobs_index_exists?: boolean;
+      roundtrip_ms?: number;
+      error_type?: string;
+      error?: string;
+    };
+    database?: {
+      select_1_ok?: boolean;
+      db_name?: string;
+      roundtrip_ms?: number;
+      error_type?: string;
+      error?: string;
+    };
+  };
+}
+
 export type ApiResult<T> = { data: T; latencyMs: number };
 export type ApiError = { error: string; latencyMs: number };
 
@@ -206,7 +231,7 @@ async function fetchWithLatency<T>(
 }
 
 export async function getHealth(): Promise<
-  ApiResult<{ elasticsearch: string; database: string }> | ApiError
+  ApiResult<HealthResponse> | ApiError
 > {
   return fetchWithLatency(`${getBase()}/api/health`);
 }
