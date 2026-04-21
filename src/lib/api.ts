@@ -70,6 +70,9 @@ export interface WorkExperienceItem {
   end_year?: number | null;
   years_in_role?: number | null;
   weighted_years?: number | null;
+  // 0.0 means the role is outside the experience-score window (>15 years old)
+  // and does not contribute to the experience dimension.
+  recency_weight?: number | null;
 }
 
 export interface CandidateLanguage {

@@ -114,8 +114,19 @@ export function CandidateCard({ candidate, rank }: CandidateCardProps) {
                     : e.start_year != null
                       ? `from ${e.start_year}`
                       : "";
+                // Roles ended >15 years ago contribute 0 to the experience score.
+                // Prefer the backend-supplied recency_weight; fall back to a
+                // local 15y computation if the field is absent (older indices).
+                const notCounted =
+                  e.recency_weight === 0 ||
+                  (e.recency_weight == null &&
+                    e.end_year != null &&
+                    new Date().getFullYear() - e.end_year > 15);
                 return (
-                  <li key={i} className="flex flex-wrap gap-x-2">
+                  <li
+                    key={i}
+                    className={`flex flex-wrap items-center gap-x-2 ${notCounted ? "opacity-50" : ""}`}
+                  >
                     <span className="font-medium">{e.raw_title || e.standardized_title || "—"}</span>
                     {e.standardized_title &&
                       e.standardized_title !== "NONE" &&
@@ -125,6 +136,14 @@ export function CandidateCard({ candidate, rank }: CandidateCardProps) {
                     {range && <span className="text-muted-foreground text-xs">({range})</span>}
                     {yrs != null && <span className="text-muted-foreground text-xs">{yrs} yrs</span>}
                     {e.industry && <span className="text-muted-foreground text-xs">· {e.industry}</span>}
+                    {notCounted && (
+                      <span
+                        className="ml-1 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                        title="Older than 15 years — not counted toward experience score"
+                      >
+                        Not counted
+                      </span>
+                    )}
                   </li>
                 );
               })}
