@@ -9,9 +9,8 @@ const DIMS = [
   { key: "title_score", paramKey: "Title", color: "bg-blue-500" },
   { key: "industry_score", paramKey: "Industry", color: "bg-emerald-500" },
   { key: "experience_score", paramKey: "Experience", color: "bg-amber-500" },
-  { key: "skills_score", paramKey: "Skills", color: "bg-violet-500" },
-  { key: "seniority_score", paramKey: "Seniority", color: "bg-rose-500" },
-  { key: "education_score", paramKey: "Education", color: "bg-cyan-500" },
+  { key: "skills_education_score", paramKey: "Skills & Education", color: "bg-violet-500" },
+  { key: "hierarchy_score", paramKey: "Hierarchy", color: "bg-rose-500" },
   { key: "language_score", paramKey: "Language", color: "bg-teal-500" },
 ] as const;
 
@@ -47,9 +46,8 @@ export function ScoreBar({ score }: { score: ScoreBreakdownBar }) {
     (score.title_score ?? 0) +
     (score.industry_score ?? 0) +
     (score.experience_score ?? 0) +
-    (score.skills_score ?? 0) +
-    (score.seniority_score ?? 0) +
-    (score.education_score ?? 0) +
+    (score.skills_education_score ?? 0) +
+    (score.hierarchy_score ?? 0) +
     (score.language_score ?? 0);
   const scale = sum > 0 ? 100 / sum : 0;
   return (

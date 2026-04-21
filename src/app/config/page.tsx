@@ -15,13 +15,12 @@ import { ResponsePanel } from "@/components/response-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DEFAULT_WEIGHTS: Record<string, number> = {
-  title: 0.38,
-  industry: 0.19,
-  experience: 0.14,
-  skills: 0.1,
-  seniority: 0.07,
-  education: 0.07,
-  language: 0.05,
+  title: 0.15,
+  industry: 0.12,
+  experience: 0.25,
+  skills_education: 0.4,
+  hierarchy: 0.06,
+  language: 0.02,
 };
 const DEFAULT_MIN_SCORE_RAW = 1.55;
 const DEFAULT_MAX_RESULTS = 20;

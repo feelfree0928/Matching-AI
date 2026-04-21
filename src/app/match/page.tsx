@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import {
   postMatch,
   getCategories,
+  getIndustries,
+  getHierarchyLevels,
   isError,
   type JobMatchRequest,
   type LanguageRequirement,
@@ -23,14 +25,8 @@ import { CandidateCard } from "@/components/candidate-card";
 import { ResponsePanel } from "@/components/response-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const SENIORITY_OPTIONS = [
-  "junior",
-  "mid",
-  "senior",
-  "manager",
-  "director",
-  "executive",
-];
+const DEFAULT_HIERARCHY = "Specialist";
+const NO_INDUSTRY = "__none__";
 
 const defaultRequest: JobMatchRequest = {
   title: "Senior Accountant",
@@ -39,8 +35,8 @@ const defaultRequest: JobMatchRequest = {
   radius_km: 50,
   pensum_min: 0,
   pensum_max: 100,
-  expected_seniority_level: "senior",
-  max_results: undefined,   // undefined → backend uses the value from /api/config
+  expected_hierarchy_level: DEFAULT_HIERARCHY,
+  max_results: undefined,
   required_languages: [],
   required_available_before: undefined,
   job_category_labels: undefined,
@@ -54,11 +50,19 @@ export default function MatchPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [hierarchyLevels, setHierarchyLevels] = useState<string[]>([]);
 
   useEffect(() => {
     getCategories().then((r) => {
       if (!isError(r)) setCategories(r.data.categories ?? []);
       setCategoriesLoaded(true);
+    });
+    getIndustries().then((r) => {
+      if (!isError(r)) setIndustries(r.data.industries ?? []);
+    });
+    getHierarchyLevels().then((r) => {
+      if (!isError(r)) setHierarchyLevels(r.data.hierarchy_levels ?? []);
     });
   }, []);
 
@@ -69,6 +73,8 @@ export default function MatchPage() {
     if (payload.job_category_labels?.length === 0) {
       delete payload.job_category_labels;
     }
+    if (!payload.industry) delete payload.industry;
+    if (!payload.skills_and_education?.trim()) delete payload.skills_and_education;
     const r = await postMatch(payload);
     setResult(r);
     setLoading(false);
@@ -137,11 +143,50 @@ export default function MatchPage() {
           </div>
           <div className="space-y-2">
             <Label>Industry</Label>
-            <Input
-              value={req.industry ?? ""}
-              onChange={(e) => setReq((p) => ({ ...p, industry: e.target.value || undefined }))}
-              placeholder="Industry"
-            />
+            <Select
+              value={req.industry ?? NO_INDUSTRY}
+              onValueChange={(v) =>
+                setReq((p) => ({ ...p, industry: v === NO_INDUSTRY ? undefined : v }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select industry…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_INDUSTRY}>
+                  Any industry (no scoring effect)
+                </SelectItem>
+                {industries.map((ind) => (
+                  <SelectItem key={ind} value={ind}>
+                    {ind}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Exact-match scoring on the closed 30-label vocabulary; selecting an
+              industry rewards candidates with verified years in that sector.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Hierarchy Level</Label>
+            <Select
+              value={req.expected_hierarchy_level ?? DEFAULT_HIERARCHY}
+              onValueChange={(v) =>
+                setReq((p) => ({ ...p, expected_hierarchy_level: v }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {hierarchyLevels.map((h) => (
+                  <SelectItem key={h} value={h}>
+                    {h}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Description</Label>
@@ -153,22 +198,20 @@ export default function MatchPage() {
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Required skills</Label>
+            <Label>Skills &amp; Education</Label>
             <Textarea
-              value={req.required_skills ?? ""}
-              onChange={(e) => setReq((p) => ({ ...p, required_skills: e.target.value || undefined }))}
-              placeholder="Skills (comma or newline)"
-              rows={2}
+              value={req.skills_and_education ?? ""}
+              onChange={(e) =>
+                setReq((p) => ({ ...p, skills_and_education: e.target.value || undefined }))
+              }
+              placeholder="IT skills, certifications, degrees… (one list, comma or newline separated)"
+              rows={3}
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Required education</Label>
-            <Textarea
-              value={req.required_education ?? ""}
-              onChange={(e) => setReq((p) => ({ ...p, required_education: e.target.value || undefined }))}
-              placeholder="Education"
-              rows={2}
-            />
+            <p className="text-xs text-muted-foreground">
+              Searches both the candidate&rsquo;s skills and education text. Exact
+              keywords (e.g. <code>SAP FI</code>) match precisely via BM25; related
+              terms also match semantically.
+            </p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Category filter (optional)</Label>
@@ -209,26 +252,6 @@ export default function MatchPage() {
             ) : (
               <p className="text-sm text-muted-foreground">No categories available. Check backend DB connection.</p>
             )}
-          </div>
-          <div className="space-y-2">
-            <Label>Expected seniority</Label>
-            <Select
-              value={req.expected_seniority_level ?? "senior"}
-              onValueChange={(v) =>
-                setReq((p) => ({ ...p, expected_seniority_level: v }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SENIORITY_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <div className="space-y-2">
             <Label>Location lat</Label>

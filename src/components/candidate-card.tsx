@@ -52,7 +52,7 @@ export function CandidateCard({ candidate, rank }: CandidateCardProps) {
           )}
           <p className="text-xs text-muted-foreground mt-0.5">
             post_id {candidate.post_id}
-            {candidate.seniority_level ? ` · ${candidate.seniority_level}` : ""}
+            {candidate.hierarchy_level ? ` · ${candidate.hierarchy_level}` : ""}
             {candidate.gender ? ` · ${candidate.gender}` : ""}
             {age ? ` · Age ~${age}` : ""}
             {candidate.location ? ` · ${candidate.location}` : ""}

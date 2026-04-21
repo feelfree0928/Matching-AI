@@ -16,10 +16,12 @@ export interface JobMatchRequest {
   post_id?: number;
   title: string;
   description?: string;
-  required_skills?: string;
-  required_education?: string;
+  // Combined Skills + Education keyword field (hybrid BM25 + semantic search).
+  skills_and_education?: string;
+  // Closed-vocabulary industry label (one of /api/industries) or undefined.
   industry?: string;
-  expected_seniority_level?: string;
+  // Closed-vocabulary hierarchy level (one of /api/hierarchy-levels).
+  expected_hierarchy_level?: string;
   location_lat: number;
   location_lon: number;
   radius_km?: number;
@@ -38,9 +40,10 @@ export interface ScoreBreakdown {
   title_score: number;
   industry_score: number;
   experience_score: number;
-  skills_score: number;
-  seniority_score: number;
-  education_score: number;
+  skills_education_score: number;
+  skills_education_keyword_score?: number;
+  skills_education_semantic_score?: number;
+  hierarchy_score: number;
   language_score?: number;
   total_formula?: string;
   score_calculation?: Array<{
@@ -100,12 +103,14 @@ export interface CandidateMatch {
   // Experience & skills
   most_relevant_role: string;
   total_relevant_years: number;
-  seniority_level: string;
+  hierarchy_level: string;
   work_experiences?: WorkExperienceItem[];
   skills_text?: string;
   education_text?: string;
   most_experience_industries?: string[];
   top_industries: string[];
+  // Normalized closed-vocabulary industries found across the candidate's history.
+  industries?: string[];
 
   // Languages
   languages?: CandidateLanguage[];
@@ -145,6 +150,8 @@ export interface MatchResponse {
   message: string | null;
   total_above_threshold: number;
   applied_category_labels?: string[];
+  applied_industry?: string | null;
+  applied_hierarchy_level?: string | null;
 }
 
 export interface ConfigResponse {
@@ -235,6 +242,18 @@ export async function getCategories(): Promise<
   ApiResult<{ categories: string[] }> | ApiError
 > {
   return fetchWithLatency(`${getBase()}/api/categories`);
+}
+
+export async function getIndustries(): Promise<
+  ApiResult<{ industries: string[] }> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/industries`);
+}
+
+export async function getHierarchyLevels(): Promise<
+  ApiResult<{ hierarchy_levels: string[] }> | ApiError
+> {
+  return fetchWithLatency(`${getBase()}/api/hierarchy-levels`);
 }
 
 export async function syncCandidates(): Promise<
